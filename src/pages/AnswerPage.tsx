@@ -1,11 +1,14 @@
 import { Link, useParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Repeat2 } from 'lucide-react'
 import { findQuestion } from '../data/questionPapers'
 import { getAnswer, type QuestionAnswer } from '../data/answers'
 import { useApp } from '../context/AppContext'
 import { FormattedExamAnswer } from '../components/FormattedExamAnswer'
 import { PaperContextNav, partIdForQuestion } from '../components/PaperContextNav'
 import { CreativeQuickRevision } from '../components/backbencher/CreativeQuickRevision'
+import { AnswerReadAloud } from '../components/AnswerReadAloud'
+import { plainTextForSpeech } from '../lib/answerSpeech'
+import { getRepeatGroupForQuestion } from '../data/repeatedQuestions'
 
 function ComparisonTable({ table }: { table: NonNullable<QuestionAnswer['comparisonTable']> }) {
   return (
@@ -59,6 +62,9 @@ export function AnswerPage() {
   const { lang, studyView } = useApp()
   const hasWriteUp = Boolean(answer?.examWrite?.trim() || answer?.answerEnglish?.trim())
   const showBackbencher = studyView === 'quick' && hasWriteUp && answer != null
+  const speechText = answer ? plainTextForSpeech(answer) : ''
+  const repeatGroup = getRepeatGroupForQuestion(paperId, num)
+  const repeatsPath = `/subjects/${subjectId}/p/${paperId}/repeats`
 
   const paperPath = `/subjects/${subjectId}/p/${paperId}/paper`
   const allNums = found
@@ -152,20 +158,32 @@ export function AnswerPage() {
       >
       {!showBackbencher ? (
         <header className="rounded-xl border border-navy/10 bg-navy/95 px-3.5 py-3 text-cream dark:border-white/10 sm:px-4">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-soft/90">
-            <span>{part.label}</span>
-            <span aria-hidden className="opacity-40">
-              ·
-            </span>
-            <span>Q{question.number}</span>
-            <span aria-hidden className="opacity-40">
-              ·
-            </span>
-            <span>{question.marks} marks</span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-soft/90">
+              <span>{part.label}</span>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <span>Q{question.number}</span>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <span>{question.marks} marks</span>
+            </div>
+            <AnswerReadAloud text={speechText} className="border-white/20 bg-white/10 text-cream hover:border-accent-soft hover:text-white" />
           </div>
           <p className="mt-1.5 text-sm font-medium leading-snug whitespace-pre-line sm:text-[15px]">
             {question.text}
           </p>
+          {repeatGroup ? (
+            <Link
+              to={repeatsPath}
+              className="mt-2 inline-flex items-center gap-1 rounded-md bg-amber-500/25 px-2 py-0.5 text-[10px] font-bold text-amber-100 hover:bg-amber-500/35"
+            >
+              <Repeat2 className="h-3 w-3" />
+              Repeated topic · {repeatGroup.occurrences.length} papers
+            </Link>
+          ) : null}
         </header>
       ) : null}
 
@@ -176,20 +194,20 @@ export function AnswerPage() {
             : 'mt-3 rounded-xl border border-teal/25 bg-white px-3.5 py-3 dark:border-teal/35 dark:bg-navy-soft sm:mt-4 sm:px-4 sm:py-4'
         }
       >
-        {!showBackbencher ? (
-          <>
-            <p className="text-xs font-bold uppercase tracking-wider text-teal">
-              {lang === 'kn' ? 'ಉತ್ತರ' : 'Answer'}
-            </p>
-            <AnswerBody answer={answer} />
-          </>
-        ) : (
+        {showBackbencher ? (
           <CreativeQuickRevision
             paper={found.paper}
             question={question}
             answer={answer}
             partLabel={part.label}
           />
+        ) : (
+          <>
+            <p className="text-xs font-bold uppercase tracking-wider text-teal">
+              {lang === 'kn' ? 'ಉತ್ತರ' : 'Answer'}
+            </p>
+            <AnswerBody answer={answer} />
+          </>
         )}
       </section>
 

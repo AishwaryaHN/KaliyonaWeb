@@ -7,6 +7,7 @@ import { SubjectPage } from './pages/SubjectPage'
 import { YearPage } from './pages/YearPage'
 import { QuestionPaperPage } from './pages/QuestionPaperPage'
 import { AnswerPage } from './pages/AnswerPage'
+import { RepeatedQuestionsPage } from './pages/RepeatedQuestionsPage'
 import { getPaperBySubjectYear } from './data/questionPapers'
 
 function YearPaperRedirect() {
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/subjects/:subjectId/:year/paper" element={<YearPaperRedirect />} />
               <Route path="/subjects/:subjectId/:year/q/:questionNum" element={<YearAnswerRedirect />} />
               <Route path="/subjects/:subjectId/p/:paperId/paper" element={<QuestionPaperPage />} />
+              <Route path="/subjects/:subjectId/p/:paperId/repeats" element={<RepeatedQuestionsPage />} />
               <Route path="/subjects/:subjectId/p/:paperId/q/:questionNum" element={<AnswerPage />} />
               <Route path="/lesson/:lessonId" element={<Navigate to="/subjects/lta/p/lta-2025/q/8" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />

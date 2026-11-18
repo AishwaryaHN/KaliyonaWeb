@@ -13,6 +13,9 @@ import {
   type ExamInfographicPoint,
 } from '../../lib/backbencher/extractAllExamPoints'
 import { useApp } from '../../context/AppContext'
+import { plainTextForSpeech } from '../../lib/answerSpeech'
+import { AnswerReadAloud } from '../AnswerReadAloud'
+import { getBackbencherBoard } from '../../lib/backbencher/boardImages'
 import { PointIllustration } from './PointIllustration'
 
 const CARD_THEMES = [
@@ -44,6 +47,11 @@ export function CreativeQuickRevision({ paper, question, answer, partLabel }: Pr
 
   const marks = typeof question.marks === 'number' ? question.marks : String(question.marks)
   const keyIdea = useMemo(() => conclusionSnippet(answer.examWrite ?? ''), [answer.examWrite])
+  const speechText = useMemo(() => plainTextForSpeech(answer), [answer])
+  const board = useMemo(
+    () => getBackbencherBoard(paper.id, question.number),
+    [paper.id, question.number],
+  )
 
   return (
     <article className="overflow-hidden rounded-[1.5rem] border-2 border-violet-300/80 bg-gradient-to-br from-violet-100 via-fuchsia-50 to-sky-100 p-2 shadow-lg dark:border-violet-500/40 dark:from-violet-950/60 dark:via-fuchsia-950/40 dark:to-sky-950/40 sm:rounded-[1.75rem] sm:p-2.5">
@@ -57,7 +65,8 @@ export function CreativeQuickRevision({ paper, question, answer, partLabel }: Pr
             <h2 className="font-display max-w-3xl text-lg font-bold leading-snug text-navy dark:text-cream sm:text-xl">
               {question.text.trim()}
             </h2>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <AnswerReadAloud text={speechText} />
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/90 px-2 py-0.5 text-[10px] font-bold text-amber-950">
                 <Zap className="h-3 w-3" />
                 {lang === 'kn' ? 'ವಿಜುಯಲ್ ರಿವಿಷನ್' : 'Visual revision'}
@@ -71,21 +80,42 @@ export function CreativeQuickRevision({ paper, question, answer, partLabel }: Pr
             </div>
           </div>
           <p className="mt-2 text-xs text-muted dark:text-cream/60">
-            {lang === 'kn'
-              ? `${points.length} ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಅಂಶಗಳು — ಚಿತ್ರದಂತೆ ಒಂದೇ ಪಟ್ಟಿಯಲ್ಲಿ`
-              : `One infographic · ${points.length} exact exam point${points.length === 1 ? '' : 's'} from your Full answer`}
+            {board
+              ? lang === 'kn'
+                ? 'ಏಕೈಕ ಪೂರ್ಣ-ಚಿತ್ರ ಇನ್ಫೋಗ್ರಾಫಿಕ್'
+                : 'Full infographic board for this answer'
+              : lang === 'kn'
+                ? `${points.length} ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಅಂಶಗಳು — ಚಿತ್ರದಂತೆ ಒಂದೇ ಪಟ್ಟಿಯಲ್ಲಿ`
+                : `One infographic · ${points.length} exact exam point${points.length === 1 ? '' : 's'} from your Full answer`}
           </p>
-          <p className="mt-1 text-[11px] italic text-violet-700/80 dark:text-violet-200/70">
-            {lang === 'kn' ? 'ನಿಮ್ಮ ಮೆಮೊರಿ ಟ್ರಿಕ್ ಶೀಘ್ರದಲ್ಲೇ' : 'Memory trick slot — add your own mnemonic later'}
-          </p>
+          {!board ? (
+            <p className="mt-1 text-[11px] italic text-violet-700/80 dark:text-violet-200/70">
+              {lang === 'kn' ? 'ನಿಮ್ಮ ಮೆಮೊರಿ ಟ್ರಿಕ್ ಶೀಘ್ರದಲ್ಲೇ' : 'Memory trick slot — add your own mnemonic later'}
+            </p>
+          ) : null}
         </header>
 
-        <PointsGrid
-          points={points}
-          illustrationIds={illustrationIds}
-          paperId={paper.id}
-          questionNumber={question.number}
-        />
+        {board ? (
+          <figure className="mt-3 overflow-hidden rounded-2xl border-2 border-violet-200/90 bg-white shadow-md dark:border-violet-500/40">
+            <img
+              src={board.src}
+              alt={board.alt}
+              className="h-auto w-full object-contain"
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption className="border-t border-violet-100 bg-violet-50/80 px-3 py-2 text-center text-[10px] font-semibold text-violet-900 dark:border-white/10 dark:bg-violet-950/40 dark:text-violet-100">
+              {lang === 'kn' ? board.captionKn : board.captionEn}
+            </figcaption>
+          </figure>
+        ) : (
+          <PointsGrid
+            points={points}
+            illustrationIds={illustrationIds}
+            paperId={paper.id}
+            questionNumber={question.number}
+          />
+        )}
 
         <footer className="mt-5 grid gap-3 border-t border-violet-100 pt-4 dark:border-white/10 sm:grid-cols-3">
           <div className="rounded-xl bg-gradient-to-br from-sky-50 to-violet-50 px-3 py-2.5 dark:from-sky-950/30 dark:to-violet-950/30">

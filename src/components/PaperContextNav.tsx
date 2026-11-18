@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { getPaper, getPapersBySubject, type QuestionPaper } from '../data/questionPapers'
+import { repeatedQuestionNumbersInPaper } from '../data/repeatedQuestions'
 import { useApp } from '../context/AppContext'
 
 type PartId = 'A' | 'B' | 'C'
@@ -37,7 +38,10 @@ export function PaperContextNav({
   if (!paper) return null
 
   const paperPath = `/subjects/${subjectId}/p/${paperId}/paper`
+  const repeatsPath = `/subjects/${subjectId}/p/${paperId}/repeats`
   const qNumbers = allQuestionNumbers(paper)
+  const repeatedNums = new Set(repeatedQuestionNumbersInPaper(paperId))
+  const onRepeats = location.pathname.endsWith('/repeats')
   const qHref = (n: number) => `/subjects/${subjectId}/p/${paperId}/q/${n}`
 
   const partPill = (partId: PartId, label: string) => {
@@ -131,6 +135,18 @@ export function PaperContextNav({
           {partPill('A', 'A')}
           {partPill('B', 'B')}
           {partPill('C', 'C')}
+          {paper.answersReady && repeatedNums.size > 0 ? (
+            <Link
+              to={repeatsPath}
+              className={`shrink-0 rounded-md px-2.5 py-1 text-[11px] font-bold sm:text-xs ${
+                onRepeats
+                  ? 'bg-amber-500/90 text-white'
+                  : 'border border-amber-400/50 bg-amber-50 text-amber-950 hover:border-amber-500 dark:bg-amber-950/40 dark:text-amber-100'
+              }`}
+            >
+              {lang === 'kn' ? 'ಪುನರ್' : 'Repeats'}
+            </Link>
+          ) : null}
         </div>
 
         {/* Row 3: jump to question */}
@@ -140,9 +156,17 @@ export function PaperContextNav({
               {lang === 'kn' ? 'ಪ್ರಶ್ನೆ' : 'Go to'}
             </span>
             <div className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {qNumbers.map((n) => {
+              {qNumbers
+                .filter((n) => (onRepeats ? repeatedNums.has(n) : true))
+                .map((n) => {
                 const isQ = currentQuestion === n
                 const inPart = paper.parts.find((p) => p.questions.some((q) => q.number === n))?.id
+                const isRepeat = repeatedNums.has(n)
+                const repeatTitle = isRepeat
+                  ? `${inPart ? `Part ${inPart} · ` : ''}Q${n} · repeated in other years`
+                  : inPart
+                    ? `Part ${inPart} · Q${n}`
+                    : `Q${n}`
                 if (variant === 'paper') {
                   return (
                     <Link
@@ -151,9 +175,11 @@ export function PaperContextNav({
                       className={`flex h-7 min-w-[1.75rem] shrink-0 items-center justify-center rounded-md text-[11px] font-bold tabular-nums ${
                         isQ
                           ? 'bg-teal text-white'
-                          : 'bg-white text-navy ring-1 ring-navy/10 hover:ring-teal/50 dark:bg-navy-soft dark:text-cream dark:ring-white/10'
+                          : isRepeat
+                            ? 'bg-amber-50 text-amber-950 ring-1 ring-amber-400/60 hover:ring-amber-500 dark:bg-amber-950/50 dark:text-amber-100'
+                            : 'bg-white text-navy ring-1 ring-navy/10 hover:ring-teal/50 dark:bg-navy-soft dark:text-cream dark:ring-white/10'
                       }`}
-                      title={inPart ? `Part ${inPart} · Q${n}` : `Q${n}`}
+                      title={repeatTitle}
                     >
                       {n}
                     </Link>
@@ -166,9 +192,11 @@ export function PaperContextNav({
                     className={`flex h-7 min-w-[1.75rem] shrink-0 items-center justify-center rounded-md text-[11px] font-bold tabular-nums ${
                       isQ
                         ? 'bg-teal text-white ring-2 ring-teal/40'
-                        : 'bg-white text-navy ring-1 ring-navy/10 hover:bg-teal/10 hover:ring-teal/40 dark:bg-navy-soft dark:text-cream dark:ring-white/10'
+                        : isRepeat
+                          ? 'bg-amber-50 text-amber-950 ring-1 ring-amber-400/60 hover:ring-amber-500 dark:bg-amber-950/50 dark:text-amber-100'
+                          : 'bg-white text-navy ring-1 ring-navy/10 hover:bg-teal/10 hover:ring-teal/40 dark:bg-navy-soft dark:text-cream dark:ring-white/10'
                     }`}
-                    title={inPart ? `Part ${inPart} · Q${n}` : `Q${n}`}
+                    title={repeatTitle}
                   >
                     {n}
                   </Link>

@@ -30,7 +30,11 @@ export function loadProgress(): ProgressState {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return defaultState
-    return { ...defaultState, ...JSON.parse(raw) }
+    const parsed = JSON.parse(raw) as Partial<ProgressState> & { studyView?: string }
+    const merged = { ...defaultState, ...parsed }
+    const sv = merged.studyView as string
+    if (sv === 'readme' || sv === 'repeat') merged.studyView = 'full'
+    return merged as ProgressState
   } catch {
     return defaultState
   }
